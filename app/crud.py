@@ -115,3 +115,73 @@ def delete_email_record(record_id: int) -> bool:
             deleted = cur.rowcount
             conn.commit()
             return deleted > 0
+
+
+def get_email_record_by_email(email: str) -> Optional[Dict[str, Any]]:
+    """Fetch a single record by email address."""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                sql.SQL(
+                    "SELECT id, created_at, email, status FROM {table} WHERE email = %s;"
+                ).format(table=sql.Identifier(TABLE_NAME)),
+                (email,),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
+
+
+def update_email_record_by_email(email: str, *, status: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """Update a record's status by email address. Returns the updated row or None if not found."""
+    if status is None:
+        # Nothing to update; return current value
+        return get_email_record_by_email(email)
+
+    _validate_status(status)
+
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                sql.SQL(
+                    """
+                    UPDATE {table}
+                    SET status = %s
+                    WHERE email = %s
+                    RETURNING id, created_at, email, status;
+                    """
+                ).format(table=sql.Identifier(TABLE_NAME)),
+                (status, email),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
+
+
+def delete_email_record_by_email(email: str) -> bool:
+    """Delete a record by email address. Returns True if a row was deleted."""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                sql.SQL("DELETE FROM {table} WHERE email = %s;").format(table=sql.Identifier(TABLE_NAME)),
+                (email,),
+            )
+            deleted = cur.rowcount
+            conn.commit()
+            return deleted > 0
+
+
+def set_email_status(email: str, status: str) -> Dict[str, Any]:
+    """
+    Create or update a record by email address.
+    - If a record for the email exists, update its status.
+    - If not, create a new record.
+    Returns the resulting row.
+    """
+    _validate_status(status)
+
+    existing = get_email_record_by_email(email)
+    if existing:
+        updated = update_email_record_by_email(email, status=status)
+        # updated could be None if concurrent delete happened; fall back to create
+        return updated if updated is not None else create_email_record(email, status)
+    else:
+        return create_email_record(email, status)
