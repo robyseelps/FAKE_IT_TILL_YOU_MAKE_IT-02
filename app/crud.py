@@ -29,9 +29,33 @@ def purge_invalid_statuses() -> int:
 
 
 def create_email_record(email: str, status: str) -> Dict[str, Any]:
+    """Create or update an email record without relying on a unique constraint.
+    Logic:
+      1. Try UPDATE by email; if a row exists it returns the updated row.
+      2. If no row updated, INSERT a new row.
+    Note: If multiple rows share the same email (data quality issue), UPDATE will affect them all
+    and we return the first one from the UPDATE RETURNING results. It's strongly recommended to
+    enforce email uniqueness at the DB level to prevent duplicates.
+    """
     _validate_status(status)
     with get_connection() as conn:
         with conn.cursor() as cur:
+            # Step 1: attempt update
+            cur.execute(
+                sql.SQL(
+                    """
+                    UPDATE {table}
+                    SET status = %s
+                    WHERE email = %s
+                    RETURNING id, created_at, email, status;
+                    """
+                ).format(table=sql.Identifier(TABLE_NAME)),
+                (status, email),
+            )
+            row = cur.fetchone()
+            if row:
+                return dict(row)
+            # Step 2: insert new
             cur.execute(
                 sql.SQL(
                     """
@@ -170,18 +194,6 @@ def delete_email_record_by_email(email: str) -> bool:
 
 
 def set_email_status(email: str, status: str) -> Dict[str, Any]:
-    """
-    Create or update a record by email address.
-    - If a record for the email exists, update its status.
-    - If not, create a new record.
-    Returns the resulting row.
-    """
+    """Set (create or update) the status for an email using the upsert logic in create_email_record."""
     _validate_status(status)
-
-    existing = get_email_record_by_email(email)
-    if existing:
-        updated = update_email_record_by_email(email, status=status)
-        # updated could be None if concurrent delete happened; fall back to create
-        return updated if updated is not None else create_email_record(email, status)
-    else:
-        return create_email_record(email, status)
+    return create_email_record(email, status)
