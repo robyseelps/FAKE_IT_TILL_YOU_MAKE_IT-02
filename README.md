@@ -1,6 +1,4 @@
-# Email CRUD FastAPI
-
-This project exposes a simple FastAPI service with CRUD endpoints to manage Email records (suitable for storing messages ingested from Gmail).
+# Email CRUD 
 
 ## Quickstart
 
@@ -31,25 +29,6 @@ This project exposes a simple FastAPI service with CRUD endpoints to manage Emai
    ```
    pip install -e .
    ```
-
-3. Run the API server:
-
-   ```
-   uvicorn app.main:app --reload
-   ```
-
-4. Visit docs:
-
-   - Swagger UI: http://127.0.0.1:8000/docs
-   - Health: http://127.0.0.1:8000/healthz
-
-## Endpoints
-
-- POST /emails — create
-- GET /emails — list (skip, limit)
-- GET /emails/{id} — retrieve
-- PATCH /emails/{id} — partial update
-- DELETE /emails/{id} — delete
 
 ## Notes
 
@@ -126,15 +105,3 @@ python app/test_crud.py
 
 Expected output includes:
 - Purged count, initial list, created rows, fetched row, updated row, deletion result, and final list.
-
-## Optional: FastAPI (previous example)
-
-The repository also contains a FastAPI example under `app/main.py` using SQLAlchemy for an `emails` model. This is independent from the `email_status` psycopg2 CRUD.
-- To run the API:
-  
-  ```
-  uvicorn app.main:app --reload
-  ```
-- Docs: http://127.0.0.1:8000/docs
-
-If desired, we can expose `email_status` CRUD via FastAPI endpoints; open an issue or request and we’ll wire it up.
