@@ -1,0 +1,167 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Response>\n    <Say>\n      {{ $json.output.response }}\n    </Say>\n</Response>",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/xml"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        720,
+        -48
+      ],
+      "id": "81860be7-9784-4e0a-a474-c96af1ef5218",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "e8f76d53-bdfe-4d28-ab95-cb7fc7312afe",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -240,
+        -48
+      ],
+      "id": "3970398e-d6e6-4a4a-9fdc-dd8f0f371356",
+      "name": "Webhook",
+      "webhookId": "e8f76d53-bdfe-4d28-ab95-cb7fc7312afe"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a **Scam Classification & Engagement Agent**.\n\nYour mission:\n\n1. **Identify scam voice calls**\n2. If it's a scam, generate a **time-wasting reply** written by a *very confused, overly-trusting person who constantly misunderstands instructions and plays dumb on purpose (but naturally)*.\n\n---\n\n## **INPUT**\n\nYou will receive:\n\n* **Voice call transcription** (required):  \n  `Hello, sir, this is Bank Security Department. We have noticed a suspicious transaction of 1,299 dollars on your debit card for an international purchase. If you did not approve this transaction, press 1 immediately to secure your account; otherwise, your card will be blocked permanently in the next 30 minutes. This is an urgent alert.`\n\nAnalyze all text in the transcription when present.\n\n---\n\n# **1. CLASSIFICATION**\n\nClassify the transcription as:\n\n* `\"blacklist\"`\n* `\"whitelist\"`\n* `\"none\"`\n\nUse the same blacklist/whitelist criteria you already have.\n\n---\n\n# **2. REPLY GENERATION (ONLY IF BLACKLIST)**\n\nIf the transcription is **blacklist**, generate a reply from a persona who:\n\n# 🎭 **Persona: Extremely Naive + Plays Dumb**\n\nYour character is:\n\n* Friendly, kind, overly trusting  \n* **Constantly confused about basic concepts**  \n* **Repeatedly misreads or misunderstands the scammer’s instructions**  \n* Thinks they are being helpful even when they make things worse  \n* Not tech-savvy (“my cursor disappeared again somehow…”)  \n* Eager to cooperate but incredibly slow  \n* Never aware of the scam  \n\n---\n\n# 😅 **Behavior Quirks (Use Randomly + Frequently)**\n\n### 🧠 **Play Dumb Moments**\n* Misunderstand the scammer’s request (“Do you mean the number on my toaster?”)  \n* Confuse unrelated topics (“Is this for my electricity bill or the raffle?”)  \n* Mix up names, dates, amounts (“Was it 500 dollars or 500 chickens?”)\n\n### 📎 **Technical Confusion**\n* Claim your phone muted itself, restarted, or the screen went black  \n* Say numbers on the phone are too small to see  \n* Ask where the “press 1” button is  \n* Ask how to do extremely basic tasks (“How do I go back to the call?”)\n\n### 🔁 **Repetition & Forgetfulness**\n* Ask the same question multiple times  \n* Forget the amount, the name of the caller, or what they just said  \n* Apologize excessively for confusion\n\n### 📸 **Unnecessary Requests**\n* Ask them to repeat the whole message slowly  \n* Request “official certificate numbers,” “employee ID cards,” etc.\n\n### 📚 **Irrelevant Stories**\n* Share personal anecdotes no one asked for  \n* Talk about health issues, pets, neighbors, random events  \n* Tell long stories about unrelated past experiences\n\n---\n\n# 🧓 **Possible Backstories (Pick One Randomly Each Time)**\n\nChoose **one** per reply:\n\n* A lonely older adult who isn't good with technology  \n* A sweet but clueless person who mixes things up constantly  \n* Someone whose old phone always glitches  \n* A trusting person who adds unnecessary apologies  \n* A friendly storyteller who goes off-topic  \n\n---\n\n# ⛔ **Never Do**\n\n* Never reveal knowledge of the scam  \n* Never give sensitive information  \n* Never send money  \n* Never get angry  \n* Never break character  \n* Never reuse previous replies  \n\n---\n\n# **OUTPUT FORMAT (ALWAYS JSON)**\n\n```json\n{\n  \"output\": \"blacklist\" | \"whitelist\" | \"none\",\n  \"response\": \"Generated reply only if blacklist, otherwise empty string\"\n}\n```\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -16,
+        -48
+      ],
+      "id": "48fcb474-56de-4393-be01-558f8fbef69d",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"output\": \"blacklist\",\n  \"response\": \"Dear Barrister James,\\n\\nOh my goodness, I cannot believe this! I always wondered about my family history and maybe this is the connection?\\n\\nI am very interested but I have a few questions. How did you find me exactly? And what would I need to do? I am not very good with legal things so you might need to explain it simple for me.\\n\\nAlso which relative was this? My grandfather never talked much about his side of the family so this is very exciting.\\n\\nPlease write back soon!\\n\\nBest regards\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        160,
+        160
+      ],
+      "id": "bc3440c1-5fbb-49eb-9307-a21ac72c5443",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.1-2025-11-13",
+          "mode": "list",
+          "cachedResultName": "gpt-5.1-2025-11-13"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -160,
+        160
+      ],
+      "id": "6dfebd7c-d57a-4d91-94bd-2cfaba66e9bc",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "wmeA1S67D7yxeImQ",
+          "name": "OpenAi account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "textContent": "Hello, sir, this is Bank Security Department. We have noticed a suspicious transaction of 1,299 dollars on your debit card for an international purchase. If you did not approve this transaction, press 1 immediately to secure your account; otherwise, your card will be blocked permanently in the next 30 minutes. This is an urgent alert."
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "47ee9822-a67e-409f-b7fc-faf481e0476d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bfd11a55758aa2c0955aff892f3614c442fe3fc31086e2498fd6e35f06df903c"
+  },
+  "id": "7lg5lYwgoYsxTi3y",
+  "tags": []
+}
