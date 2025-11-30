@@ -1,107 +1,97 @@
-# Email CRUD 
+# 🚀 How to Run Sysiphus
 
-## Quickstart
+Sysiphus is an automated email-monitoring system that scans your Gmail inbox, classifies messages through an n8n → GPT pipeline, stores sender status in a Supabase PostgreSQL database, and automatically sends humorous, time-wasting replies to scammers — keeping them busy for as long as possible.
 
-1. Create and fill your `.env` (or export environment variables):
+---
 
-   Copy the example and adjust:
-   
-   ```
-   cp .env.example .env
-   ```
+## 1️⃣ Clone the repository
 
-   Or set `DATABASE_URL` directly, e.g.:
-   
-   ```
-   export DATABASE_URL="sqlite:///./mail.db"
-   ```
-
-2. Install dependencies (uses `uv` or pip):
-
-   Using uv:
-   
-   ```
-   uv pip install -e .
-   ```
-
-   Or with pip:
-   
-   ```
-   pip install -e .
-   ```
-
-## Notes
-
-- By default will use SQLite at `./mail.db` if PostgreSQL vars are not set.
-- For Postgres, prefer `psycopg2-binary` for local dev. In production, you may switch to `psycopg2`.
-
-# Email Status CRUD (PostgreSQL)
-
-This project includes a psycopg2-based CRUD for a table managing email status entries with strict status values.
-
-## Table Schema
-
-- Table: `email_status`
-- Columns:
-  - `id` bigint (identity/auto-increment primary key)
-  - `created_at` timestamptz (defaults to `NOW()`)
-  - `email` text (NOT NULL)
-  - `status` text (NOT NULL; allowed values: `blacklist`, `whitelist`, `none`)
-
-## Environment Configuration
-
-Provide database connection settings via `.env`:
-
+```bash
+git clone https://github.com/<your-repo>/sysiphus.git
+cd sysiphus
 ```
-user=YOUR_DB_USER
-password=YOUR_DB_PASSWORD
-host=YOUR_DB_HOST
-port=5432
-dbname=YOUR_DB_NAME
+## 2️⃣ Install dependencies
+
+## 3️⃣ Configure Supabase (PostgreSQL)
+```bash
+SUPABASE_HOST=your-project.supabase.co
+SUPABASE_PORT=6543
+SUPABASE_DB=postgres
+SUPABASE_USER=postgres
+SUPABASE_PASSWORD=your_password
 ```
+(Find these values under Supabase → Project Settings → Database)
 
-An example is already present in `.env` using a Supabase Postgres instance.
+Sysiphus uses Supabase to store the classification status of each sender:
 
-## Dependencies
+whitelist
 
-- psycopg2-binary
-- python-dotenv
+blacklist
 
-These are already declared in `pyproject.toml`. Install with:
+none (unknown or undecided)
 
+## 4️⃣ Add Gmail OAuth credentials
+Place these files in the /app
+
+credentials.json — from Google Cloud
+
+token.json — generated automatically on first run
+
+## 5️⃣ Run Sysiphus
+```bash
+python app/reader.py
 ```
-uv pip install -e .
-# or
-pip install -e .
-```
+Sysiphus will then:
+- connect to Gmail
+- read only new/unprocessed messages
+- classify each message via n8n + GPT
+- update the sender status in Supabase
+- automatically reply to scammers
+- use Redis if available
 
-## CRUD Functions
+## 🧵 Real Examples of Sysiphus in Action
+Below are real screenshots showing how Sysiphus processes emails and responds to scammers.
 
-Located in `app/crud.py`:
-- `create_email_record(email: str, status: str) -> dict`
-- `get_email_record(record_id: int) -> dict | None`
-- `list_email_records(limit: int = 100, offset: int = 0) -> list[dict]`
-- `update_email_record(record_id: int, email: str | None = None, status: str | None = None) -> dict | None`
-- `delete_email_record(record_id: int) -> bool`
-- `purge_invalid_statuses() -> int` (utility to remove rows with invalid status values)
+🖼️ 1. Sysiphus Detects and Processes New Emails
+![img.png](img.png)
 
-Status enforcement:
-- Allowed statuses: `blacklist`, `whitelist`, `none`.
-- `create` and `update` validate the status and raise a `ValueError` if invalid.
+🔍 What you can see in this screenshot
+1. First email — instantly identified as scam
+A new sender appears
+n8n classifier returns: blacklist
+siphus immediately sends a time-wasting reply
+The scammer is now engaged and wasting time
+2. Second email — ambiguous case
+New sender
+Classification: none
+Not obviously scam, but not trusted either
+Sysiphus leaves it for the user to reply manually
+3. Third email — sender becomes trusted
+Same sender messages again
+This time the classifier returns: whitelist
+Sysiphus updates Supabase
+Future emails from this contact will be ignored (normal behavior)
+This demonstrates how Sysiphus learns over time and avoids replying to legitimate contacts.
 
-## Create Table and Seed Mock Data
+🧵 2. The Scammer’s Email + Sysiphus’ Sarcastic Auto-Reply
 
-A small test runner `app/test_crud.py` will:
-- Create the table if it does not exist.
-- Purge any rows violating the status constraint.
-- Seed valid mock data.
-- Exercise all CRUD operations and print results.
+![img_3.png](img_3.png)
 
-Run it:
+🤡 What is happening here
+A scammer sends a classic “Nigerian prince” message asking for help transferring money.
+Sysiphus responds automatically with a long, polite, confused, intentionally silly message designed to:
+keep the scammer engaged
+make the scammer believe the victim is real
+force them to explain things repeatedly
+waste as much time as possible
+The reply includes:
+misunderstandings
+naive assumptions
+irrelevant stories
+unnecessary questions
+requests for clarification
+This strategy keeps scammers busy instead of bothering real people.
 
-```
-python app/test_crud.py
-```
-
-Expected output includes:
-- Purged count, initial list, created rows, fetched row, updated row, deletion result, and final list.
+🎯 Why the Project Is Called Sysiphus
+Like Sisyphus eternally pushing his boulder uphill, scammers interacting with Sysiphus are stuck in a pointless loop.
+Sysiphus lets them believe they are making progress — while they are actually wasting their time on a bot that will never send them money.
