@@ -10,6 +10,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
+
 from app.crud import get_email_record_by_email, set_email_status
 from redisUtils import (
     get_redis_connection,
